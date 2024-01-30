@@ -3443,7 +3443,7 @@ declare namespace Eris {
   export class ComponentInteraction<T extends PossiblyUncachedTextable = TextableChannel> extends Interaction {
     appPermissions?: Permission;
     channel: T;
-    data: ComponentInteractionButtonData | ComponentInteractionSelectMenuData;
+    data: ComponentInteractionButtonData | ComponentInteractionChannelSelectMenuData | ComponentInteractionMentionableSelectMenuData | ComponentInteractionRoleSelectMenuData | ComponentInteractionSelectMenuData | ComponentInteractionUserSelectMenuData;
     guildID?: string;
     member?: Member;
     message: Message;
