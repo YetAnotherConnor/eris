@@ -151,6 +151,7 @@ declare namespace Eris {
   type MessageContent = string | AdvancedMessageContent;
   type MessageContentEdit = string | AdvancedMessageContentEdit;
   type PossiblyUncachedMessage = Message | { channel: TextableChannel | { id: string; guild?: Uncached }; guildID?: string; id: string };
+  type SelectMenuTypes = Constants["ComponentTypes"]["CHANNEL_SELECT" | "MENTIONABLE_SELECT" | "ROLE_SELECT" | "SELECT_MENU" | "USER_SELECT"];
 
   // Permission
   type PermissionType = Constants["PermissionOverwriteTypes"][keyof Constants["PermissionOverwriteTypes"]];
@@ -1269,39 +1270,17 @@ declare namespace Eris {
     custom_id: string;
   }
 
-  interface ComponentInteractionChannelSelectMenuData extends ComponentInteractionSelectMenuDataBase {
-    component_type: Constants["ComponentTypes"]["CHANNEL_SELECT"];
-    resolved?: {
-      channels?: Collection<PartialChannel>;
-    };
-  }
-  interface ComponentInteractionMentionableSelectMenuData extends ComponentInteractionSelectMenuDataBase {
-    component_type: Constants["ComponentTypes"]["MENTIONABLE_SELECT"];
-    resolved?: {
-      users?: Collection<User>;
-      members?: Collection<Omit<Member, "user" | "deaf" | "mute">>;
-      roles?: Collection<Role>;
-    };
-  }
-  interface ComponentInteractionRoleSelectMenuData extends ComponentInteractionSelectMenuDataBase {
-    component_type: Constants["ComponentTypes"]["ROLE_SELECT"];
-    resolved?: {
-      roles?: Collection<Role>;
-    };
-  }
-  interface ComponentInteractionSelectMenuData extends ComponentInteractionSelectMenuDataBase {
-    component_type: Constants["ComponentTypes"]["SELECT_MENU"];
-  }
-  interface ComponentInteractionUserSelectMenuData extends ComponentInteractionSelectMenuDataBase {
-    component_type: Constants["ComponentTypes"]["USER_SELECT"];
-    resolved?: {
-      users?: Collection<User>;
-      members?: Collection<Omit<Member, "user" | "deaf" | "mute">>;
-    };
-  }
-  interface ComponentInteractionSelectMenuDataBase {
+  interface ComponentInteractionSelectMenuData {
     custom_id: string;
     values: string[];
+    component_type: SelectMenuTypes;
+    resolved?: ComponentInteractionSelectMenuResolvedData;
+  }
+  interface ComponentInteractionSelectMenuResolvedData {
+    channels?: Collection<PartialChannel>;
+    users?: Collection<User>;
+    members?: Collection<Omit<Member, "user" | "deaf" | "mute">>;
+    roles?: Collection<Role>;
   }
   interface InteractionAutocomplete {
     choices: ApplicationCommandOptionChoice[];
@@ -1456,12 +1435,8 @@ declare namespace Eris {
   }
   interface ChannelSelectMenu extends SelectMenuBase {
     channel_types?: ChannelTypes[];
-    default_values?: ChannelSelectMenuDefaultValue[];
+    default_values?: SelectMenuDefaultValue<Constants["ComponentTypes"]["CHANNEL_SELECT"]>[];
     type: Constants["ComponentTypes"]["CHANNEL_SELECT"];
-  }
-  interface ChannelSelectMenuDefaultValue {
-    id: string;
-    type: "channel";
   }
   interface CreateStickerOptions extends Required<Pick<EditStickerOptions, "name" | "tags">> {
     file: FileContent;
@@ -1497,12 +1472,8 @@ declare namespace Eris {
     style: Exclude<ButtonStyles, Constants["ButtonStyles"]["LINK"]>;
   }
   interface MentionableSelectMenu extends SelectMenuBase {
-    default_values?: MentionableSelectMenuDefaultValue[];
+    default_values?: SelectMenuDefaultValue<Constants["ComponentTypes"]["MENTIONABLE_SELECT"]>[];
     type: Constants["ComponentTypes"]["MENTIONABLE_SELECT"];
-  }
-  interface MentionableSelectMenuDefaultValue {
-    id: string;
-    type: "user" | "role";
   }
   interface MessageActivity {
     party_id?: string;
@@ -1540,15 +1511,11 @@ declare namespace Eris {
     id: string | number;
   }
   interface RoleSelectMenu extends SelectMenuBase {
-    default_values?: RoleSelectMenuDefaultValue[];
+    default_values?: SelectMenuDefaultValue<Constants["ComponentTypes"]["ROLE_SELECT"]>[];
     type: Constants["ComponentTypes"]["ROLE_SELECT"];
   }
-  interface RoleSelectMenuDefaultValue {
-    id: string;
-    type: "role";
-  }
   interface SelectMenu extends SelectMenuBase{
-    options: SelectMenuOptions[];
+    options: SelectMenuOption[];
     type: Constants["ComponentTypes"]["SELECT_MENU"];
   }
   interface SelectMenuBase {
@@ -1558,7 +1525,15 @@ declare namespace Eris {
     min_values?: number;
     placeholder?: string;
   }
-  interface SelectMenuOptions {
+  interface SelectMenuDefaultValue<T extends Constants["ComponentTypes"][Exclude<keyof Constants["ComponentTypes"], "ACTION_ROW" | "BUTTON" | "SELECT_MENU" | "TEXT_INPUT">]> {
+    id: string;
+    type: T extends Constants["ComponentTypes"]["CHANNEL_SELECT"] ? "channel" :
+      T extends Constants["ComponentTypes"]["ROLE_SELECT"] ? "role" :
+        T extends Constants["ComponentTypes"]["USER_SELECT"] ? "user" :
+          T extends Constants["ComponentTypes"]["MENTIONABLE_SELECT"] ? "role" | "user" :
+            never;
+  }
+  interface SelectMenuOption {
     default?: boolean;
     description?: string;
     emoji?: Partial<PartialEmoji>;
@@ -1596,12 +1571,8 @@ declare namespace Eris {
     url: string;
   }
   interface UserSelectMenu extends SelectMenuBase {
-    default_values?: UserSelectMenuDefaultValue[];
+    default_values?: SelectMenuDefaultValue<Constants["ComponentTypes"]["USER_SELECT"]>[];
     type: Constants["ComponentTypes"]["USER_SELECT"];
-  }
-  interface UserSelectMenuDefaultValue {
-    id: string;
-    type: "user";
   }
 
   // Presence
@@ -3443,7 +3414,7 @@ declare namespace Eris {
   export class ComponentInteraction<T extends PossiblyUncachedTextable = TextableChannel> extends Interaction {
     appPermissions?: Permission;
     channel: T;
-    data: ComponentInteractionButtonData | ComponentInteractionChannelSelectMenuData | ComponentInteractionMentionableSelectMenuData | ComponentInteractionRoleSelectMenuData | ComponentInteractionSelectMenuData | ComponentInteractionUserSelectMenuData;
+    data: ComponentInteractionButtonData | ComponentInteractionSelectMenuData;
     guildID?: string;
     member?: Member;
     message: Message;
